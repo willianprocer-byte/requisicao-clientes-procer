@@ -1,0 +1,15 @@
+{
+  "name": "requisicao-clientes-procer",
+  "version": "1.0.0",
+  "description": "Sistema de solicitações recebidas via agente de IA (Omnichannel)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "uuid": "^11.0.5"
+  }
+}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Requisições Procer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>Requisições de Clientes</h1>
+      <p class="subtitle">Solicitações recebidas via agente de IA (Omnichannel)</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <main>
+    <section class="filters">
+      <select id="filter-status">
+        <option value="">Todos os status</option>
+        <option value="pendente">Pendente</option>
+        <option value="em_analise">Em análise</option>
+        <option value="concluida">Concluída</option>
+        <option value="rejeitada">Rejeitada</option>
+      </select>
+      <select id="filter-tipo">
+        <option value="">Todos os tipos</option>
+        <option value="atualizar_nivel_silo">Nível do Silo</option>
+        <option value="atualizar_amostragem">Amostragem</option>
+        <option value="atualizar_produto">Produto</option>
+      </select>
+      <button id="btn-refresh" class="btn-secondary">Atualizar</button>
+    </section>
+
+    <section id="task-list" class="task-list"></section>
+    <div id="empty-state" class="empty-state hidden">
+      <p>Nenhuma requisição encontrada.</p>
+    </div>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close">&times;</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

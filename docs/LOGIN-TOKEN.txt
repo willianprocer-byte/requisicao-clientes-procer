@@ -1,0 +1,12 @@
+# Comando CORRETO para login com token
+
+# 1. Crie token Classic com "repo" em: https://github.com/settings/tokens/new
+
+# 2. Rode este comando e COLE o token quando pedir:
+gh auth login --with-token
+
+# Depois de colar o token, pressione Enter, depois Ctrl+Z e Enter
+
+# 3. Envie o codigo:
+cd "C:\Users\willian.tramontin\Desktop\Requisição Clientes Procer"
+git push -u origin main

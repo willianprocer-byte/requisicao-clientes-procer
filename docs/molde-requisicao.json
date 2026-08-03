@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Molde de Requisição - Procer",
+  "description": "Estrutura que o agente de IA deve enviar ao sistema Procer via POST /api/requisicoes. Baseado nos pedidos reais dos clientes via Omnichannel.",
+  "endpoint": {
+    "url": "https://requisicao-clientes-procer.onrender.com/api/requisicoes",
+    "url_painel": "https://requisicao-clientes-procer.onrender.com",
+    "url_molde": "https://requisicao-clientes-procer.onrender.com/api/molde",
+    "metodo": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-API-Key": "SUA_CHAVE_API"
+    }
+  },
+  "tipos_requisicao": [
+    {
+      "tipo": "atualizar_nivel_silo",
+      "descricao": "Atualizar o nível/estoque do silo no sistema do cliente (cheio, vazio, finalizando)"
+    },
+    {
+      "tipo": "atualizar_amostragem",
+      "descricao": "Atualizar amostragem da retirada do grão (UMD, IMP, AVR)"
+    },
+    {
+      "tipo": "atualizar_produto",
+      "descricao": "Atualizar produto e umidade armazenados no silo (soja, milho, etc.)"
+    }
+  ],
+  "estrutura_base": {
+    "tipo": "string (obrigatório) - atualizar_nivel_silo | atualizar_amostragem | atualizar_produto",
+    "cliente_nome": "string (OBRIGATÓRIO) - nome EXATO do contato cadastrado no Omnichannel/Procer, igual ao que aparece no sistema. A equipe usa esse nome para identificar o cliente e ir atualizar no sistema.",
+    "cliente_id": "string (opcional) - não é necessário se o nome do contato já identifica o cliente",
+    "solicitante": "string (opcional) - quem pediu na conversa (ex: Sidiclei Operador, Francismar Rovani)",
+    "contato": "string (opcional) - telefone do WhatsApp",
+    "regiao": "string (opcional) - UF ou regional (ex: PR, MT, MS)",
+    "descricao": "string (opcional) - resumo em texto livre do pedido, como o cliente escreveu",
+    "origem": "string (opcional, padrão: agente_ia)",
+    "dados": "object (obrigatório) - campos específicos conforme o tipo"
+  },
+  "identificacao_cliente": {
+    "regra": "O agente deve usar o nome do contato EXATAMENTE como está cadastrado no Omnichannel, pois a equipe Procer reconhece o cliente por esse nome para ir atualizar no sistema.",
+    "exemplos_corretos": [
+      "Copacol (Universo): Nova Aurora - PR",
+      "Mario Wolf Filho (Fazenda Gamada)",
+      "Ricardo Ramassotti - Vladimir Zancaner Basto"
+    ],
+    "origem_do_nome": "Campo 'nome do contato' / 'contact name' do Omnichannel da Convert"
+  },
+  "campos_comuns": {
+    "silos": "array (obrigatório) - lista de silos afetados pelo pedido. Um pedido pode incluir vários silos.",
+    "silo.identificador": "string - nome como o cliente fala (ex: Silo pulmão 102, SILO 3)",
+    "silo.numero": "string (opcional) - número do silo (ex: 3, 12, 102)",
+    "silo.tipo_silo": "string (opcional) - pulmao | convencional | celula",
+    "nivel": "cheio | vazio | finalizando | parcial",
+    "produto": "SOJA | MILHO | TRIGO | outro",
+    "amostragem.umd": "number - Umidade (%)",
+    "amostragem.imp": "number - Impurezas (%)",
+    "amostragem.avr": "number - Avariados (%)",
+    "umidade_percentual": "number - umidade informada pelo cliente",
+    "umidade_percentual_max": "number - quando cliente diz '14% a baixo' ou 'até 14%'"
+  },
+  "exemplos_reais": {
+    "exemplo_1_nivel_silo_cheio": {
+      "_referencia": "Sidiclei - Fazenda Gamada (MT) - Silo pulmão 102 cheio",
+      "tipo": "atualizar_nivel_silo",
+      "cliente_id": "CLI-FAZ-GAMADA",
+      "cliente_nome": "Mario Wolf Filho - Fazenda Gamada",
+      "solicitante": "Sidiclei (Operador)",
+      "contato": "5517996500000",
+      "regiao": "MT",
+      "descricao": "Silo pulmão 102 cheio favor atualizar - Estoque",
+      "origem": "agente_ia",
+      "dados": {
+        "silos": [
+          {
+            "identificador": "Silo pulmão 102",
+            "numero": "102",
+            "tipo_silo": "pulmao",
+            "nivel": "cheio"
+          }
+        ]
+      }
+    },
+    "exemplo_2_amostragem_retirada": {
+      "_referencia": "Ricardo Ramassotti - Atualização silos com UMD/IMP/AVR",
+      "tipo": "atualizar_amostragem",
+      "cliente_id": "CLI-VLADIMIR-ZANCANER",
+      "cliente_nome": "Ricardo Ramassotti - Vladimir Zancaner Basto",
+      "contato": "5517996500000",
+      "descricao": "Atualização dos Silos - SILO 3 com amostragem. Silos 1 e 4 vazios, Silo 2 finalizando.",
+      "origem": "agente_ia",
+      "dados": {
+        "silos": [
+          {
+            "identificador": "SILO 3",
+            "numero": "3",
+            "produto": "SOJA",
+            "amostragem": {
+              "umd": 12.50,
+              "imp": 0.6,
+              "avr": 6.5
+            }
+          }
+        ],
+        "outros_silos": [
+          { "numero": "1", "nivel": "vazio" },
+          { "numero": "4", "nivel": "vazio" },
+          { "numero": "2", "nivel": "finalizando" }
+        ]
+      }
+    },
+    "exemplo_3_troca_produto_umidade": {
+      "_referencia": "Francismar Rovani - Copacol - Silos com soja/milho",
+      "tipo": "atualizar_produto",
+      "cliente_id": "CLI-COPACOL-NOVA-AURORA",
+      "cliente_nome": "Copacol (Universo) - Nova Aurora - PR",
+      "solicitante": "Francismar Rovani",
+      "contato": "5545999000000",
+      "regiao": "PR",
+      "descricao": "Silos constando soja mas agora com milho. Silos 12 e 15 ainda soja. Restante milho com umidade 14% a baixo.",
+      "origem": "agente_ia",
+      "dados": {
+        "silos": [
+          {
+            "numero": "12",
+            "identificador": "Silo 12",
+            "produto": "SOJA"
+          },
+          {
+            "numero": "15",
+            "identificador": "Silo 15",
+            "produto": "SOJA"
+          },
+          {
+            "identificador": "Demais silos",
+            "produto": "MILHO",
+            "umidade_percentual_max": 14
+          }
+        ]
+      }
+    }
+  },
+  "campos_dados_por_tipo": {
+    "atualizar_nivel_silo": {
+      "silos": [
+        {
+          "identificador": "string (obrigatório se numero ausente)",
+          "numero": "string (opcional)",
+          "tipo_silo": "pulmao | convencional (opcional)",
+          "nivel": "cheio | vazio | finalizando | parcial (obrigatório)"
+        }
+      ]
+    },
+    "atualizar_amostragem": {
+      "silos": [
+        {
+          "identificador": "string (obrigatório se numero ausente)",
+          "numero": "string (opcional)",
+          "produto": "SOJA | MILHO | etc (opcional)",
+          "amostragem": {
+            "umd": "number - Umidade % (obrigatório pelo menos um campo)",
+            "imp": "number - Impurezas %",
+            "avr": "number - Avariados %"
+          }
+        }
+      ],
+      "outros_silos": "array (opcional) - silos mencionados só com nível/status, sem amostragem"
+    },
+    "atualizar_produto": {
+      "silos": [
+        {
+          "identificador": "string (obrigatório se numero ausente)",
+          "numero": "string (opcional)",
+          "produto": "SOJA | MILHO | etc (obrigatório)",
+          "umidade_percentual": "number (opcional)",
+          "umidade_percentual_max": "number (opcional) - ex: 14 quando cliente diz '14% a baixo'"
+        }
+      ]
+    }
+  },
+  "instrucoes_agente_ia": [
+    "Sempre confirmar com o cliente os silos e valores antes de enviar a requisição.",
+    "Um pedido pode conter vários silos no array 'silos'.",
+    "Quando o cliente informar amostragem (UMD, IMP, AVR), usar tipo 'atualizar_amostragem'.",
+    "Quando pedir para marcar silo cheio/vazio/finalizando, usar tipo 'atualizar_nivel_silo'.",
+    "Quando informar troca de produto (soja/milho) ou umidade, usar tipo 'atualizar_produto'.",
+    "Se a mesma mensagem tiver amostragem E nível de outros silos, enviar 'outros_silos' dentro de atualizar_amostragem ou criar requisições separadas.",
+    "Preencher 'descricao' com o texto resumido do que o cliente pediu.",
+    "Preencher 'solicitante' com o nome de quem está conversando no WhatsApp."
+  ],
+  "resposta_sucesso": {
+    "status": 201,
+    "exemplo": {
+      "id": "uuid-gerado-automaticamente",
+      "tipo": "atualizar_amostragem",
+      "status": "pendente",
+      "cliente_id": "CLI-VLADIMIR-ZANCANER",
+      "cliente_nome": "Ricardo Ramassotti - Vladimir Zancaner Basto",
+      "solicitante": null,
+      "contato": "5517996500000",
+      "regiao": null,
+      "descricao": "Atualização dos Silos - SILO 3 com amostragem",
+      "dados": {},
+      "origem": "agente_ia",
+      "observacoes_internas": null,
+      "criado_em": "2026-07-31T13:00:00.000Z",
+      "atualizado_em": "2026-07-31T13:00:00.000Z"
+    }
+  },
+  "resposta_erro": {
+    "status": 400,
+    "exemplo": {
+      "erro": "Dados inválidos",
+      "detalhes": ["dados.silos deve ser um array com pelo menos um silo"]
+    }
+  }
+}

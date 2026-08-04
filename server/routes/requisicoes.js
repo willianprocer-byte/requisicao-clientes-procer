@@ -13,6 +13,55 @@ const TIPOS_VALIDOS = [
 const STATUS_VALIDOS = ['pendente', 'em_analise', 'concluida', 'rejeitada'];
 const NIVEL_VALIDOS = ['cheio', 'vazio', 'finalizando', 'parcial'];
 
+function isVariavelNaoSubstituida(valor) {
+  return typeof valor === 'string' && /^\$/.test(valor.trim());
+}
+
+function normalizarSilo(silo) {
+  if (!silo || typeof silo !== 'object') return silo;
+
+  const s = { ...silo };
+
+  if (isVariavelNaoSubstituida(s.identificador)) {
+    s.identificador = null;
+  }
+
+  if (s.numero != null) s.numero = String(s.numero).trim();
+  if (s.identificador != null) s.identificador = String(s.identificador).trim();
+
+  if (s.identificador && /^\d+$/.test(s.identificador) && !s.numero) {
+    s.numero = s.identificador;
+  }
+
+  if (s.numero && (!s.identificador || /^\d+$/.test(s.identificador))) {
+    const prefixo = s.tipo_silo === 'pulmao' ? 'Silo pulmão' : 'Silo';
+    s.identificador = `${prefixo} ${s.numero}`;
+  }
+
+  if (!s.identificador && !s.numero) {
+    s.identificador = 'Silo não informado';
+  }
+
+  if (s.produto) s.produto = String(s.produto).toUpperCase();
+
+  return s;
+}
+
+function normalizarDados(dados) {
+  if (!dados || typeof dados !== 'object') return dados;
+
+  const normalizado = { ...dados };
+
+  if (Array.isArray(normalizado.silos)) {
+    normalizado.silos = normalizado.silos.map(normalizarSilo);
+  }
+  if (Array.isArray(normalizado.outros_silos)) {
+    normalizado.outros_silos = normalizado.outros_silos.map(normalizarSilo);
+  }
+
+  return normalizado;
+}
+
 function temIdentificadorSilo(silo) {
   return silo && (silo.identificador || silo.numero);
 }
@@ -97,13 +146,16 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const erros = validarRequisicao(req.body);
+  const body = { ...req.body };
+  if (body.dados) body.dados = normalizarDados(body.dados);
+
+  const erros = validarRequisicao(body);
   if (erros.length > 0) {
     return res.status(400).json({ erro: 'Dados inválidos', detalhes: erros });
   }
 
   const agora = new Date().toISOString();
-  const { tipo, cliente_id, cliente_nome, solicitante, contato, regiao, descricao, dados, origem } = req.body;
+  const { tipo, cliente_id, cliente_nome, solicitante, contato, regiao, descricao, dados, origem } = body;
 
   const requisicao = store.insert({
     id: uuidv4(),

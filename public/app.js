@@ -13,6 +13,13 @@ const STATUS_LABELS = {
   rejeitada: 'Rejeitada'
 };
 
+const NIVEL_LABELS = {
+  cheio: 'Cheio',
+  vazio: 'Vazio',
+  finalizando: 'Finalizando',
+  parcial: 'Parcial'
+};
+
 let requisicoes = [];
 let selectedId = null;
 
@@ -37,6 +44,70 @@ function formatDate(iso) {
   });
 }
 
+function formatSiloNome(silo) {
+  if (!silo) return 'Silo não informado';
+
+  if (silo.identificador && /^\$/.test(String(silo.identificador).trim())) {
+    if (silo.numero) {
+      const prefixo = silo.tipo_silo === 'pulmao' ? 'Silo pulmão' : 'Silo';
+      return `${prefixo} ${silo.numero}`;
+    }
+    return 'Silo não informado';
+  }
+
+  if (silo.identificador) {
+    const id = String(silo.identificador).trim();
+    if (/^\d+$/.test(id)) {
+      const prefixo = silo.tipo_silo === 'pulmao' ? 'Silo pulmão' : 'Silo';
+      return `${prefixo} ${id}`;
+    }
+    return id;
+  }
+
+  if (silo.numero) {
+    const prefixo = silo.tipo_silo === 'pulmao' ? 'Silo pulmão' : 'Silo';
+    return `${prefixo} ${silo.numero}`;
+  }
+
+  return 'Silo não informado';
+}
+
+function formatNivel(nivel) {
+  return NIVEL_LABELS[nivel] || nivel || '—';
+}
+
+function formatSiloDetalhe(silo, tipo) {
+  const nome = formatSiloNome(silo);
+  const linhas = [`<strong>${nome}</strong>`];
+
+  if (silo.numero) linhas.push(`Nº: ${silo.numero}`);
+  if (silo.tipo_silo) linhas.push(`Tipo: ${silo.tipo_silo}`);
+
+  if (tipo === 'atualizar_nivel_silo' && silo.nivel) {
+    linhas.push(`Nível: ${formatNivel(silo.nivel)}`);
+  }
+
+  if (tipo === 'atualizar_produto') {
+    if (silo.produto) linhas.push(`Produto: ${silo.produto}`);
+    if (silo.umidade_percentual != null) linhas.push(`Umidade: ${silo.umidade_percentual}%`);
+    if (silo.umidade_percentual_max != null) linhas.push(`Umidade máx: ${silo.umidade_percentual_max}%`);
+  }
+
+  if (tipo === 'atualizar_amostragem') {
+    if (silo.produto) linhas.push(`Produto: ${silo.produto}`);
+    if (silo.amostragem) {
+      const am = silo.amostragem;
+      const parts = [];
+      if (am.umd != null) parts.push(`UMD ${am.umd}%`);
+      if (am.imp != null) parts.push(`IMP ${am.imp}%`);
+      if (am.avr != null) parts.push(`AVR ${am.avr}%`);
+      if (parts.length) linhas.push(parts.join(' · '));
+    }
+  }
+
+  return linhas.join(' · ');
+}
+
 function renderStats() {
   const counts = { pendente: 0, em_analise: 0, concluida: 0, rejeitada: 0 };
   requisicoes.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
@@ -46,6 +117,54 @@ function renderStats() {
     <div class="stat-card analise"><div class="number">${counts.em_analise}</div><div class="label">Em análise</div></div>
     <div class="stat-card concluida"><div class="number">${counts.concluida}</div><div class="label">Concluídas</div></div>
   `;
+}
+
+function renderResumoSilos(r) {
+  const silos = r.dados?.silos;
+  if (!silos?.length) return '';
+
+  const resumos = silos.slice(0, 3).map(s => formatSiloDetalhe(s, r.tipo));
+  const extra = silos.length > 3 ? ` +${silos.length - 3} silos` : '';
+
+  return `<div class="task-silos">${resumos.join('<br>')}${extra}</div>`;
+}
+
+function renderSilosHtml(r) {
+  const silos = r.dados?.silos || [];
+  const outros = r.dados?.outros_silos || [];
+
+  if (!silos.length && !outros.length) {
+    return '<p class="text-muted">Nenhum silo informado</p>';
+  }
+
+  let html = silos.map(s => `
+    <div class="silo-card">
+      <div class="silo-card-title">${formatSiloNome(s)}</div>
+      <div class="silo-card-grid">
+        ${s.numero ? `<span><label>Número</label>${s.numero}</span>` : ''}
+        ${s.tipo_silo ? `<span><label>Tipo silo</label>${s.tipo_silo}</span>` : ''}
+        ${s.nivel ? `<span><label>Nível</label>${formatNivel(s.nivel)}</span>` : ''}
+        ${s.produto ? `<span><label>Produto</label>${s.produto}</span>` : ''}
+        ${s.umidade_percentual != null ? `<span><label>Umidade</label>${s.umidade_percentual}%</span>` : ''}
+        ${s.umidade_percentual_max != null ? `<span><label>Umidade máx</label>${s.umidade_percentual_max}%</span>` : ''}
+        ${s.amostragem?.umd != null ? `<span><label>UMD</label>${s.amostragem.umd}%</span>` : ''}
+        ${s.amostragem?.imp != null ? `<span><label>IMP</label>${s.amostragem.imp}%</span>` : ''}
+        ${s.amostragem?.avr != null ? `<span><label>AVR</label>${s.amostragem.avr}%</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  if (outros.length) {
+    html += '<h4 class="outros-silos-title">Outros silos mencionados</h4>';
+    html += outros.map(s => `
+      <div class="silo-card silo-card-secondary">
+        <div class="silo-card-title">${formatSiloNome(s)}</div>
+        ${s.nivel ? `<div>Nível: ${formatNivel(s.nivel)}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  return html;
 }
 
 function renderList() {
@@ -80,28 +199,6 @@ function renderList() {
   });
 }
 
-function renderResumoSilos(r) {
-  const silos = r.dados?.silos;
-  if (!silos?.length) return '';
-
-  const resumos = silos.slice(0, 3).map(s => {
-    const nome = s.identificador || `Silo ${s.numero}`;
-    if (r.tipo === 'atualizar_nivel_silo') return `${nome}: ${s.nivel}`;
-    if (r.tipo === 'atualizar_amostragem' && s.amostragem) {
-      const parts = [];
-      if (s.amostragem.umd != null) parts.push(`UMD ${s.amostragem.umd}`);
-      if (s.amostragem.imp != null) parts.push(`IMP ${s.amostragem.imp}`);
-      if (s.amostragem.avr != null) parts.push(`AVR ${s.amostragem.avr}`);
-      return `${nome}${s.produto ? ` (${s.produto})` : ''}: ${parts.join(', ')}`;
-    }
-    if (r.tipo === 'atualizar_produto') return `${nome}: ${s.produto}${s.umidade_percentual_max ? ` ≤${s.umidade_percentual_max}%` : ''}`;
-    return nome;
-  });
-
-  const extra = silos.length > 3 ? ` +${silos.length - 3} silos` : '';
-  return `<div class="task-silos">${resumos.join(' · ')}${extra}</div>`;
-}
-
 function render() {
   renderStats();
   renderList();
@@ -125,11 +222,15 @@ function openModal(id) {
       ${r.regiao ? `<p>Região: ${r.regiao}</p>` : ''}
       ${r.contato ? `<p>Contato: ${r.contato}</p>` : ''}
     </div>
-    ${r.descricao ? `<div class="detail-section"><h3>Descrição</h3><p>${r.descricao}</p></div>` : ''}
+    ${r.descricao ? `<div class="detail-section"><h3>Descrição do pedido</h3><p>${r.descricao}</p></div>` : ''}
     <div class="detail-section">
-      <h3>Dados da requisição</h3>
-      <pre class="detail-json">${JSON.stringify(r.dados, null, 2)}</pre>
+      <h3>Silos / Informações</h3>
+      ${renderSilosHtml(r)}
     </div>
+    <details class="detail-section detail-raw">
+      <summary>Ver JSON completo</summary>
+      <pre class="detail-json">${JSON.stringify(r.dados, null, 2)}</pre>
+    </details>
     <div class="detail-section">
       <h3>Observações internas</h3>
       <textarea class="obs-input" id="obs-input" placeholder="Adicionar observação...">${r.observacoes_internas || ''}</textarea>

@@ -195,7 +195,64 @@ select {
   color: var(--primary);
   margin-top: 0.35rem;
   font-weight: 500;
+  line-height: 1.6;
 }
+
+.silo-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.silo-card-secondary {
+  opacity: 0.85;
+}
+
+.silo-card-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.silo-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.silo-card-grid span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.875rem;
+}
+
+.silo-card-grid label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.outros-silos-title {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 1rem 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-raw summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.text-muted { color: var(--text-muted); }
 
 .task-desc {
   font-size: 0.875rem;

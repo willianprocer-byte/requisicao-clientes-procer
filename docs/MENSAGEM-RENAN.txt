@@ -1,0 +1,32 @@
+Renan, tudo certo do nosso lado! A API já está no ar.
+
+🔗 URL da API (POST):
+https://requisicao-clientes-procer.onrender.com/api/requisicoes
+
+🔑 Header obrigatório:
+Content-Type: application/json
+X-API-Key: [vou te passar a chave separado]
+
+📋 Molde completo com exemplos:
+https://requisicao-clientes-procer.onrender.com/api/molde
+
+As 3 ferramentas que você criou usam a MESMA URL. O que muda é o campo "tipo" no JSON:
+
+1️⃣ atualizar_nivel_silo → silo cheio, vazio ou finalizando
+2️⃣ atualizar_amostragem → UMD, IMP, AVR da retirada do grão
+3️⃣ atualizar_produto → troca de produto/umidade (soja, milho)
+
+⚠️ Regra importante:
+O campo "cliente_nome" deve ser o nome EXATO do contato cadastrado no Omnichannel, igual ao nosso sistema. A equipe usa esse nome para identificar o cliente e ir atualizar.
+
+📝 Fluxo sugerido no prompt:
+1. Identificar o tipo de pedido
+2. Coletar silos e valores com o cliente
+3. Confirmar os dados antes de enviar
+4. Chamar a ferramenta correspondente
+5. Avisar o cliente que a solicitação foi registrada
+
+Quando enviar com sucesso (status 201), a tarefa aparece no nosso painel:
+https://requisicao-clientes-procer.onrender.com
+
+Me avisa quando configurar que a gente faz um teste juntos!

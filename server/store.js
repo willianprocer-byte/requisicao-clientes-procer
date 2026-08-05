@@ -45,7 +45,29 @@ function update(id, changes) {
   const idx = rows.findIndex(r => r.id === id);
   if (idx === -1) return null;
 
-  rows[idx] = { ...rows[idx], ...changes, atualizado_em: new Date().toISOString() };
+  const atual = rows[idx];
+  const agora = new Date().toISOString();
+  const historico = Array.isArray(atual.historico) ? [...atual.historico] : [];
+
+  if (changes.status && changes.status !== atual.status) {
+    historico.push({
+      status: changes.status,
+      em: agora,
+      observacao: changes.observacoes_internas || changes.erro_motivo || null
+    });
+  }
+
+  rows[idx] = {
+    ...atual,
+    ...changes,
+    historico,
+    atualizado_em: agora,
+    concluida_em: changes.status === 'concluida' ? agora : (changes.concluida_em ?? atual.concluida_em),
+    erro_motivo: changes.status === 'erro'
+      ? (changes.erro_motivo || changes.observacoes_internas || atual.erro_motivo)
+      : (changes.erro_motivo ?? atual.erro_motivo)
+  };
+
   writeAll(rows);
   return rows[idx];
 }

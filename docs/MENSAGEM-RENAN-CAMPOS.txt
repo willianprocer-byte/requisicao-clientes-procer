@@ -1,0 +1,148 @@
+Renan, obrigado pelo log! Então a Melissa ESTÁ chamando a ferramenta — o erro é nos CAMPOS do body.
+
+A API retorna erro 400 quando falta algum campo obrigatório. Segue o mapeamento exato:
+
+═══════════════════════════════════════
+CAMPOS OBRIGATÓRIOS (todas as ferramentas)
+═══════════════════════════════════════
+
+| Campo          | Obrigatório | Exemplo |
+|----------------|-------------|---------|
+| tipo           | SIM         | fixo por ferramenta (ver abaixo) |
+| cliente_nome   | SIM         | "Willian Medeiros Tramontin - Procer Teste - SC" |
+| dados          | SIM         | objeto com array "silos" |
+| dados.silos    | SIM         | array com pelo menos 1 item |
+| descricao      | NÃO         | resumo do pedido |
+| solicitante    | NÃO         | quem pediu na conversa |
+| regiao         | NÃO         | "SC", "PR", etc. |
+
+═══════════════════════════════════════
+FERRAMENTA: atualizar_amostragem
+═══════════════════════════════════════
+
+tipo = "atualizar_amostragem" (FIXO)
+
+Cada item em dados.silos precisa:
+- identificador OU numero (ex: "SILO 3" ou "3")
+- amostragem.umd OU amostragem.imp OU amostragem.avr (pelo menos um)
+- produto (opcional, ex: "SOJA")
+
+JSON que FUNCIONA (testado):
+{
+  "tipo": "atualizar_amostragem",
+  "cliente_nome": "Willian Medeiros Tramontin - Procer Teste - SC",
+  "descricao": "SILO 3 soja UMD 11.5 IMP 0.3 AVR 5.7",
+  "dados": {
+    "silos": [
+      {
+        "identificador": "SILO 3",
+        "numero": "3",
+        "produto": "SOJA",
+        "amostragem": {
+          "umd": 11.5,
+          "imp": 0.3,
+          "avr": 5.7
+        }
+      }
+    ]
+  }
+}
+
+Erros comuns:
+❌ Falta cliente_nome
+❌ Falta dados.silos (array)
+❌ Falta identificador ou numero no silo
+❌ amostragem sem umd/imp/avr
+❌ umd/imp/avr como string "11.5" em vez de número 11.5
+
+═══════════════════════════════════════
+FERRAMENTA: atualizar_nivel_silo
+═══════════════════════════════════════
+
+tipo = "atualizar_nivel_silo" (FIXO)
+
+Cada item em dados.silos precisa:
+- identificador OU numero
+- nivel = "cheio" | "vazio" | "finalizando" | "parcial"
+
+JSON que FUNCIONA:
+{
+  "tipo": "atualizar_nivel_silo",
+  "cliente_nome": "Willian Medeiros Tramontin - Procer Teste - SC",
+  "descricao": "Silo pulmão 102 cheio",
+  "dados": {
+    "silos": [
+      {
+        "identificador": "Silo pulmão 102",
+        "numero": "102",
+        "nivel": "cheio"
+      }
+    ]
+  }
+}
+
+═══════════════════════════════════════
+FERRAMENTA: atualizar_produto
+═══════════════════════════════════════
+
+tipo = "atualizar_produto" (FIXO)
+
+Cada item em dados.silos precisa:
+- identificador OU numero
+- produto = "SOJA" | "MILHO" | etc.
+
+JSON que FUNCIONA:
+{
+  "tipo": "atualizar_produto",
+  "cliente_nome": "Willian Medeiros Tramontin - Procer Teste - SC",
+  "descricao": "Silos 12 e 15 soja, resto milho",
+  "dados": {
+    "silos": [
+      { "numero": "12", "produto": "SOJA" },
+      { "numero": "15", "produto": "SOJA" },
+      { "identificador": "Demais silos", "produto": "MILHO", "umidade_percentual_max": 14 }
+    ]
+  }
+}
+
+═══════════════════════════════════════
+DICA PARA CONFIGURAR NO CONVERT
+═══════════════════════════════════════
+
+Se a ferramenta pede campos separados, mapear assim:
+
+cliente_nome  → $name (nome exato do contato)
+descricao     → resumo montado pela IA
+dados         → objeto JSON montado pela IA com silos[]
+
+O campo "tipo" pode ser FIXO em cada ferramenta (não precisa a IA enviar se já está na URL/body template).
+
+O campo $id_silo está chegando LITERAL ("$id_silo") em vez do número do silo.
+No Convert, mapear id_silo para o valor real (ex: "3"), não a variável.
+
+Campos que devem ser preenchidos SEPARADOS na ferramenta:
+
+atualizar_nivel_silo:
+- numero: "3" (número do silo)
+- identificador: "Silo 3" (nome legível)
+- nivel: "cheio" | "vazio" | "finalizando" | "parcial"
+- tipo_silo: "pulmao" (opcional)
+
+atualizar_amostragem:
+- numero: "3"
+- identificador: "Silo 3"
+- produto: "SOJA"
+- umd, imp, avr (números)
+
+atualizar_produto:
+- numero: "12"
+- identificador: "Silo 12"
+- produto: "SOJA" ou "MILHO"
+
+NÃO enviar só identificador: "1" — enviar numero + identificador formatado.
+NÃO deixar variáveis $id_silo sem substituir.
+
+Me manda o erro exato do log (detalhes[]) que te ajudo a identificar qual campo faltou!
+
+Teste manual: https://requisicao-clientes-procer.onrender.com/api/requisicoes
+Painel: https://requisicao-clientes-procer.onrender.com

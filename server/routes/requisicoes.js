@@ -10,7 +10,7 @@ const TIPOS_VALIDOS = [
   'atualizar_produto'
 ];
 
-const STATUS_VALIDOS = ['pendente', 'em_analise', 'concluida', 'rejeitada'];
+const STATUS_VALIDOS = ['pendente', 'em_analise', 'concluida', 'rejeitada', 'erro'];
 const NIVEL_VALIDOS = ['cheio', 'vazio', 'finalizando', 'parcial'];
 
 function isVariavelNaoSubstituida(valor) {
@@ -170,6 +170,13 @@ router.post('/', (req, res) => {
     dados,
     origem: origem || 'agente_ia',
     observacoes_internas: null,
+    erro_motivo: null,
+    concluida_em: null,
+    historico: [{
+      status: 'pendente',
+      em: agora,
+      observacao: 'Requisição recebida'
+    }],
     criado_em: agora,
     atualizado_em: agora
   });
@@ -181,7 +188,7 @@ router.patch('/:id', (req, res) => {
   const row = store.findById(req.params.id);
   if (!row) return res.status(404).json({ erro: 'Requisição não encontrada' });
 
-  const { status, observacoes_internas } = req.body;
+  const { status, observacoes_internas, erro_motivo } = req.body;
 
   if (status && !STATUS_VALIDOS.includes(status)) {
     return res.status(400).json({ erro: `status deve ser um de: ${STATUS_VALIDOS.join(', ')}` });
@@ -190,6 +197,8 @@ router.patch('/:id', (req, res) => {
   const changes = {};
   if (status) changes.status = status;
   if (observacoes_internas !== undefined) changes.observacoes_internas = observacoes_internas;
+  if (erro_motivo !== undefined) changes.erro_motivo = erro_motivo;
+  if (status === 'erro' && erro_motivo) changes.observacoes_internas = erro_motivo;
 
   const atualizada = store.update(req.params.id, changes);
   res.json(atualizada);

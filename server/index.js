@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const requisicoesRouter = require('./routes/requisicoes');
+const automacaoRouter = require('./routes/automacao');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +27,7 @@ function authMiddleware(req, res, next) {
 }
 
 app.use('/api/requisicoes', authMiddleware, requisicoesRouter);
+app.use('/api/automacao', automacaoRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

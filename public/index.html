@@ -12,18 +12,28 @@
       <h1>Requisições de Clientes</h1>
       <p class="subtitle">Solicitações recebidas via agente de IA (Omnichannel)</p>
     </div>
-    <div class="stats" id="stats"></div>
+    <div class="header-actions">
+      <div class="automacao-panel">
+        <span class="bridge-status" id="bridge-status">
+          <span class="status-dot offline"></span>
+          Automação offline
+        </span>
+        <button id="btn-processar" class="btn-primary" disabled>Processar pendentes</button>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
   </header>
 
+  <div id="toast" class="toast hidden"></div>
+
   <main>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="pendentes">Pendentes</button>
+      <button class="tab" data-tab="concluidas">Concluídas</button>
+      <button class="tab" data-tab="erros">Erros</button>
+    </nav>
+
     <section class="filters">
-      <select id="filter-status">
-        <option value="">Todos os status</option>
-        <option value="pendente">Pendente</option>
-        <option value="em_analise">Em análise</option>
-        <option value="concluida">Concluída</option>
-        <option value="rejeitada">Rejeitada</option>
-      </select>
       <select id="filter-tipo">
         <option value="">Todos os tipos</option>
         <option value="atualizar_nivel_silo">Nível do Silo</option>
@@ -35,7 +45,7 @@
 
     <section id="task-list" class="task-list"></section>
     <div id="empty-state" class="empty-state hidden">
-      <p>Nenhuma requisição encontrada.</p>
+      <p>Nenhuma requisição nesta aba.</p>
     </div>
   </main>
 

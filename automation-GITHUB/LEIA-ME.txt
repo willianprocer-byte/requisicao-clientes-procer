@@ -1,0 +1,16 @@
+Pasta limpa para subir no GitHub (sem node_modules, sem config.json com senha).
+
+No GitHub:
+1. Abra a pasta automation do repositório (ou crie a pasta automation)
+2. Upload files → selecione TODOS os arquivos desta pasta
+3. Commit
+
+No PC, após clonar ou baixar:
+1. Copie config.example.json → config.json
+2. Preencha login CeresWeb
+3. Execute 1-INSTALAR.bat
+4. Execute 3-ATIVAR-AUTOMACAO.bat quando for usar
+
+NÃO suba:
+- node_modules/  (muitos arquivos — GitHub rejeita)
+- config.json    (tem senha)

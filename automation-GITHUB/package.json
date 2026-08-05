@@ -1,0 +1,14 @@
+{
+  "name": "procer-automation",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "processar": "node run.js",
+    "processar:uma": "node run.js --id",
+    "ativar": "node bridge.js",
+    "install-browser": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}

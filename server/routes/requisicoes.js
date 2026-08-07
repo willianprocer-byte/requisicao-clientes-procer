@@ -13,8 +13,33 @@ const TIPOS_VALIDOS = [
 const STATUS_VALIDOS = ['pendente', 'em_analise', 'concluida', 'rejeitada', 'erro'];
 const NIVEL_VALIDOS = ['cheio', 'vazio', 'finalizando', 'parcial'];
 
+const NIVEL_SINONIMOS = {
+  'quase cheio': 'finalizando',
+  'quase lotado': 'finalizando',
+  'enchendo': 'finalizando',
+  'parcialmente cheio': 'parcial',
+  'meio cheio': 'parcial',
+  'zerado': 'vazio',
+  'lotado': 'cheio'
+};
+
+function normalizarNivel(nivel) {
+  if (nivel == null || nivel === '') return null;
+  const s = String(nivel).trim().toLowerCase();
+  if (NIVEL_VALIDOS.includes(s)) return s;
+  return NIVEL_SINONIMOS[s] || s;
+}
+
 function isVariavelNaoSubstituida(valor) {
   return typeof valor === 'string' && /^\$/.test(valor.trim());
+}
+
+function parseNumero(valor) {
+  if (valor == null || valor === '') return null;
+  if (typeof valor === 'number' && !Number.isNaN(valor)) return valor;
+  const s = String(valor).trim().replace(',', '.').replace(/%/g, '');
+  const n = parseFloat(s);
+  return Number.isNaN(n) ? null : n;
 }
 
 function normalizarSilo(silo) {
@@ -43,6 +68,20 @@ function normalizarSilo(silo) {
   }
 
   if (s.produto) s.produto = String(s.produto).toUpperCase();
+
+  if (s.nivel != null) s.nivel = normalizarNivel(s.nivel);
+
+  if (s.umidade_percentual != null) s.umidade_percentual = parseNumero(s.umidade_percentual);
+  if (s.umidade_percentual_max != null) s.umidade_percentual_max = parseNumero(s.umidade_percentual_max);
+
+  if (s.amostragem && typeof s.amostragem === 'object') {
+    s.amostragem = {
+      ...s.amostragem,
+      umd: parseNumero(s.amostragem.umd),
+      imp: parseNumero(s.amostragem.imp),
+      avr: parseNumero(s.amostragem.avr)
+    };
+  }
 
   return s;
 }
@@ -96,9 +135,7 @@ function validarRequisicao(body) {
     case 'atualizar_nivel_silo':
       validarSilos(body.dados.silos, erros);
       body.dados.silos?.forEach((silo, i) => {
-        if (!silo.nivel) {
-          erros.push(`dados.silos[${i}].nivel é obrigatório (cheio, vazio, finalizando, parcial)`);
-        } else if (!NIVEL_VALIDOS.includes(silo.nivel)) {
+        if (silo.nivel && !NIVEL_VALIDOS.includes(silo.nivel)) {
           erros.push(`dados.silos[${i}].nivel deve ser um de: ${NIVEL_VALIDOS.join(', ')}`);
         }
       });

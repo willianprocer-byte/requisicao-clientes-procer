@@ -64,7 +64,7 @@ let selectedId = null;
 
 let activeTab = 'pendentes';
 
-let automacaoStatus = { bridge_online: false, processando: false };
+let automacaoStatus = { bridge_online: false, processando: false, auto_processar_ativo: true };
 
 
 
@@ -103,39 +103,35 @@ async function fetchAutomacaoStatus() {
 
 
 function renderAutomacaoPanel() {
-
   const statusEl = document.getElementById('bridge-status');
-
   const btn = document.getElementById('btn-processar');
-
+  const autoCheck = document.getElementById('auto-processar');
+  const autoLabel = autoCheck?.closest('.auto-toggle');
   const online = automacaoStatus.bridge_online;
-
   const processando = automacaoStatus.processando;
+  const autoAtivo = automacaoStatus.auto_processar_ativo !== false;
 
+  if (autoCheck && autoCheck.checked !== autoAtivo) {
+    autoCheck.checked = autoAtivo;
+  }
 
-
+  const autoTxt = autoAtivo && online ? ' · auto 1 min' : '';
   statusEl.innerHTML = processando
-
     ? '<span class="status-dot processando"></span> Processando...'
-
     : online
-
-      ? '<span class="status-dot online"></span> Automação ativa'
-
+      ? `<span class="status-dot online"></span> Automação ativa${autoTxt}`
       : '<span class="status-dot offline"></span> Automação offline';
 
-
-
   btn.disabled = processando;
-
   btn.textContent = processando ? 'Processando...' : 'Processar pendentes';
-
   btn.title = online
+    ? 'Executar agora as requisições pendentes no CeresWeb'
+    : 'Ative a automação local (3-ATIVAR-AUTOMACAO.bat)';
 
-    ? 'Executar requisições pendentes de amostragem no CeresWeb'
-
-    : 'Ative a automação local (3-ATIVAR-AUTOMACAO.bat) e clique aqui';
-
+  if (autoLabel) {
+    autoLabel.classList.toggle('disabled', !online || processando);
+    autoCheck.disabled = !online || processando;
+  }
 }
 
 
@@ -156,34 +152,65 @@ function showToast(msg, type = 'info') {
 
 
 
+async function toggleAutoProcessar(ativo) {
+  try {
+    const res = await fetch(`${API_AUTOMACAO}/auto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ativo })
+    });
+    const data = await res.json();
+    automacaoStatus.auto_processar_ativo = data.auto_processar_ativo !== false;
+    renderAutomacaoPanel();
+    showToast(
+      automacaoStatus.auto_processar_ativo
+        ? 'Auto-processar ativado (a cada 1 min, se houver pendentes).'
+        : 'Auto-processar desativado.',
+      'info'
+    );
+  } catch {
+    showToast('Erro ao alterar auto-processar.', 'error');
+  }
+}
+
 async function solicitarProcessamento() {
-
   const btn = document.getElementById('btn-processar');
-
   btn.disabled = true;
 
-
-
   try {
-
     const res = await fetch(`${API_AUTOMACAO}/solicitar`, { method: 'POST' });
-
     const data = await res.json();
 
-    showToast(data.mensagem, data.bridge_online ? 'success' : 'warning');
+    if (!data.bridge_online) {
+      showToast(data.mensagem, 'warning');
+      await fetchAutomacaoStatus();
+      btn.disabled = automacaoStatus.processando;
+      return;
+    }
 
+    showToast('Processamento iniciado… aguarde o CeresWeb abrir no PC.', 'info');
+
+    for (let i = 0; i < 120; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const st = await fetch(`${API_AUTOMACAO}/status`).then(r => r.json());
+
+      if (st.processando) continue;
+
+      if (st.ultimo_resultado?.em && st.solicitado_em &&
+          new Date(st.ultimo_resultado.em) >= new Date(st.solicitado_em)) {
+        const r = st.ultimo_resultado;
+        showToast(r.mensagem || 'Processamento concluído.', r.sucesso ? 'success' : 'warning');
+        break;
+      }
+    }
+
+    await fetchRequisicoes();
   } catch {
-
     showToast('Erro ao solicitar processamento.', 'error');
-
   }
 
-
-
   await fetchAutomacaoStatus();
-
   btn.disabled = automacaoStatus.processando;
-
 }
 
 
@@ -704,7 +731,7 @@ function openModal(id) {
 
       ${r.status !== 'rejeitada' ? '<button class="btn-action btn-rejeitar" data-status="rejeitada">Rejeitar</button>' : ''}
 
-      ${['atualizar_amostragem', 'atualizar_produto'].includes(r.tipo) && ['pendente', 'erro'].includes(r.status)
+      ${['atualizar_nivel_silo', 'atualizar_amostragem', 'atualizar_produto'].includes(r.tipo) && ['pendente', 'erro'].includes(r.status)
 
         ? '<button class="btn-action btn-processar-uma" type="button">Processar esta</button>' : ''}
 
@@ -825,6 +852,10 @@ document.getElementById('btn-refresh').addEventListener('click', () => {
 });
 
 document.getElementById('btn-processar').addEventListener('click', solicitarProcessamento);
+
+document.getElementById('auto-processar').addEventListener('change', e => {
+  toggleAutoProcessar(e.target.checked);
+});
 
 document.getElementById('modal-close').addEventListener('click', closeModal);
 

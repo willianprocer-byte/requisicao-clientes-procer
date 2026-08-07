@@ -10,6 +10,7 @@ router.get('/status', (_req, res) => {
     processando: state.processando,
     solicitar_processamento: state.solicitar_processamento,
     solicitado_em: state.solicitado_em,
+    auto_processar_ativo: state.auto_processar_ativo !== false,
     ultima_execucao: state.ultima_execucao,
     ultimo_resultado: state.ultimo_resultado,
     ultimo_heartbeat: state.ultimo_heartbeat
@@ -75,6 +76,15 @@ router.post('/finalizar', (req, res) => {
     }
   });
   res.json({ ok: true });
+});
+
+router.post('/auto', (req, res) => {
+  const ativo = req.body?.ativo !== false;
+  const state = writeState({ auto_processar_ativo: ativo });
+  res.json({
+    ok: true,
+    auto_processar_ativo: state.auto_processar_ativo !== false
+  });
 });
 
 module.exports = router;

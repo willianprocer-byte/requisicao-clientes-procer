@@ -73,6 +73,19 @@ header {
 .status-dot.offline { background: var(--text-muted); }
 .status-dot.processando { background: var(--warning); animation: pulse 1s infinite; }
 
+.auto-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auto-toggle input { cursor: pointer; }
+.auto-toggle.disabled { opacity: 0.5; pointer-events: none; }
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }

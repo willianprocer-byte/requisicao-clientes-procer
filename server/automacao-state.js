@@ -8,6 +8,7 @@ const DEFAULT_STATE = {
   processar_id: null,
   solicitado_em: null,
   processando: false,
+  auto_processar_ativo: true,
   ultima_execucao: null,
   ultimo_resultado: null,
   ultimo_heartbeat: null
